@@ -1,0 +1,98 @@
+Resources:
+  sgaygo60186D69:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: AygoCdkStack/sg_aygo
+      GroupName: sg_aygo
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allow all outbound traffic by default
+          IpProtocol: "-1"
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          Description: Allows SSH access from Internet
+          FromPort: 22
+          IpProtocol: tcp
+          ToPort: 22
+        - CidrIp: 0.0.0.0/0
+          Description: Allows HTTP access from Internet
+          FromPort: 80
+          IpProtocol: tcp
+          ToPort: 80
+        - CidrIp: 0.0.0.0/0
+          Description: Allows HTTPS access from Internet
+          FromPort: 443
+          IpProtocol: tcp
+          ToPort: 443
+        - CidrIp: 0.0.0.0/0
+          Description: Allows docker port access
+          FromPort: 42000
+          IpProtocol: tcp
+          ToPort: 42000
+      VpcId: vpc-040e8f55fe8e59608
+    Metadata:
+      aws:cdk:path: AygoCdkStack/sg_aygo/Resource
+  aygoec2InstanceProfileEEEFD8C5:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Roles:
+        - LabRole
+    Metadata:
+      aws:cdk:path: AygoCdkStack/aygo_ec2/InstanceProfile
+  aygoec26A8E3104:
+    Type: AWS::EC2::Instance
+    Properties:
+      AvailabilityZone: us-east-1a
+      IamInstanceProfile:
+        Ref: aygoec2InstanceProfileEEEFD8C5
+      ImageId:
+        Ref: SsmParameterValueawsserviceamiamazonlinuxlatestamzn2amikernel510hvmx8664gp2C96584B6F00A464EAD1953AFF4B05118Parameter
+      InstanceType: t2.micro
+      KeyName: aygo_key
+      SecurityGroupIds:
+        - Fn::GetAtt:
+            - sgaygo60186D69
+            - GroupId
+      SubnetId: subnet-0e4658e6bfee6c5d9
+      Tags:
+        - Key: Name
+          Value: aygo_ec2
+      UserData:
+        Fn::Base64: |-
+          #!/bin/bash
+          sudo yum update -y
+          sudo yum -y install docker
+          sudo service docker start
+          sudo usermod -a -G docker ec2-user
+          docker pull juancamilo399/sparkwebaygo
+          docker run -d -p 42000:6000 --name firstdockerimageaws juancamilo399/sparkwebaygo
+    Metadata:
+      aws:cdk:path: AygoCdkStack/aygo_ec2/Resource
+  CDKMetadata:
+    Type: AWS::CDK::Metadata
+    Properties:
+      Analytics: v2:deflate64:H4sIAAAAAAAA/1WNQQrCMBBFz9J9MqZFENcuRFelHkDGOIWxTSKTRJHSuxuRgq7m//f4TAO1WYOp8Bm1vQ565AtMp4R2UB3FkMWSKu48kW2KIJuF02svId/Vrvf/4OBjQl8WxSx5VowOfkAroeex8MJaFHSUSD5l+TerIz5wVW/AwLa6RWYt2Sd2BN33vgEnuwgOtQAAAA==
+    Metadata:
+      aws:cdk:path: AygoCdkStack/CDKMetadata/Default
+Parameters:
+  SsmParameterValueawsserviceamiamazonlinuxlatestamzn2amikernel510hvmx8664gp2C96584B6F00A464EAD1953AFF4B05118Parameter:
+    Type: AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-kernel-5.10-hvm-x86_64-gp2
+  BootstrapVersion:
+    Type: AWS::SSM::Parameter::Value<String>
+    Default: /cdk-bootstrap/hnb659fds/version
+    Description: Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]
+Rules:
+  CheckBootstrapVersion:
+    Assertions:
+      - Assert:
+          Fn::Not:
+            - Fn::Contains:
+                - - "1"
+                  - "2"
+                  - "3"
+                  - "4"
+                  - "5"
+                - Ref: BootstrapVersion
+        AssertDescription: CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.
+
