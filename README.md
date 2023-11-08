@@ -12,7 +12,7 @@ al campo userData.
 Para lograr lo anterior se utilizara cdk como herramienta de creacion de
 infraestructura como codigo, donde para la creacion del servidor web se utilizara
 una imagen de dockerhub previamente desarrollada, siendo esta creada y ejecutada mediante los
-scripts en userData.
+scripts en userData. El acceso a la instancia es directamente a través del DNS público asignado por AWS (ec2-54-146-104-144.compute-1.amazonaws.com)
 
 ## Pre-requisitos
 * [Maven](https://maven.apache.org/) - Administrador de dependencias
